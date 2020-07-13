@@ -1,4 +1,4 @@
-https://sqldbpool.com/2015/02/03/script-to-list-out-sql-logins-and-database-user-mappings/
+-- https://sqldbpool.com/2015/02/03/script-to-list-out-sql-logins-and-database-user-mappings/
 
 create table #loginmappings(  
  LoginName  nvarchar(128) NULL,  
