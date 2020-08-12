@@ -6,7 +6,10 @@ SELECT @@SERVERNAME AS NombreServidor
   FROM master.dbo.sysdatabases
 
 
-SELECT @@SERVERNAME AS NombreServidor
-     , [name]       AS NombreBaseDatos
-     , state_desc   AS Estado
-  FROM sys.databases;  
+SELECT @@SERVERNAME        AS ServerName
+     , [name]              AS DBName
+     , state_desc          AS [State]
+	 , recovery_model_desc AS RecoveryModel
+	 , compatibility_level AS CompatibilityLevel
+	 , collation_name      AS [CollationName]
+  FROM sys.databases;   
