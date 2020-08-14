@@ -49,4 +49,19 @@ from ReportServer.dbo.Subscriptions s
 join ReportServer.dbo.Catalog c on c.ItemID = s.Report_OID
 join ReportServer.dbo.ReportSchedule rs on rs.SubscriptionID = s.SubscriptionID
 join ReportServer.dbo.Users uc on uc.UserID = c.ModifiedByID
-join ReportServer.dbo.Users us on us.UserID = s.OwnerId
+join ReportServer.dbo.Users us on us.UserID = s.OwnerId;
+
+
+-- With Jobs
+
+SELECT  Schedule.ScheduleID AS JobName
+       ,[Catalog].Name AS ReportName
+       ,Subscriptions.Description AS Recipients
+       ,[Catalog].Path AS ReportPath
+       ,StartDate
+       ,Schedule.LastRunTime
+FROM    dbo.ReportSchedule
+        INNER JOIN dbo.Schedule ON ReportSchedule.ScheduleID = Schedule.ScheduleID
+        INNER JOIN dbo.Subscriptions ON ReportSchedule.SubscriptionID = Subscriptions.SubscriptionID
+        INNER JOIN dbo.[Catalog] ON ReportSchedule.ReportID = [Catalog].ItemID
+                                                         AND Subscriptions.Report_OID = [Catalog].ItemID
