@@ -15,23 +15,22 @@ RETURNS BIT
 AS
 BEGIN 
     
-	DECLARE @bitEmailVal AS BIT;
-	DECLARE @EmailText   AS VARCHAR(100);
+	DECLARE @bit_email_val AS BIT;
+	DECLARE @email_text    AS VARCHAR(100);
 
-		SET @EmailText = LTRIM(RTRIM(ISNULL(@email, '')))
-
-  SET @bitEmailVal = CASE WHEN @EmailText = '' THEN 0
-                          WHEN @EmailText LIKE '% %' THEN 0
-                          WHEN @EmailText LIKE ('%["(),:;<>\]%') THEN 0
-                          WHEN SUBSTRING(@EmailText,CHARINDEX('@',@EmailText),LEN(@EmailText)) LIKE ('%[!#$%&*+/=?^`_{|]%') THEN 0
-                          WHEN (LEFT(@EmailText,1) LIKE ('[-_.+]') OR RIGHT(@EmailText,1) LIKE ('[-_.+]')) THEN 0                                                                                    
-                          WHEN (@EmailText LIKE '%[%' OR @EmailText LIKE '%]%') THEN 0
-                          WHEN @EmailText LIKE '%@%@%' THEN 0
-                          WHEN @EmailText NOT LIKE '_%@_%._%' THEN 0
-                          ELSE 1 
-                      END;
+		SET @email_text    = LTRIM(RTRIM(ISNULL(@email, '')));
+        SET @bit_email_val = CASE WHEN (@email_text = '') THEN 0
+								  WHEN (@email_text LIKE '% %') THEN 0
+								  WHEN (@email_text LIKE ('%["(),:;<>\]%')) THEN 0
+								  WHEN (SUBSTRING(@email_text,CHARINDEX('@',@email_text),LEN(@email_text)) LIKE ('%[!#$%&*+/=?^`_{|]%')) THEN 0
+								  WHEN ((LEFT(@email_text,1) LIKE ('[-_.+]') OR RIGHT(@email_text,1) LIKE ('[-_.+]'))) THEN 0                                                                                    
+								  WHEN ((@email_text LIKE '%[%' OR @email_text LIKE '%]%')) THEN 0
+								  WHEN (@email_text LIKE '%@%@%') THEN 0
+								  WHEN (@email_text NOT LIKE '_%@_%._%') THEN 0
+								  ELSE 1 
+							  END;
 					  
-  RETURN @bitEmailVal;
+	RETURN @bit_email_val;
   
 END 
 GO
