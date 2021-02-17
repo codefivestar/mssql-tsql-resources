@@ -1,4 +1,4 @@
-
+-- https://www.sqlshack.com/t-sql-scripts-to-generate-database-health-reports/
 /* SERVER AND INSTANCE STATUS */
 
 DECLARE @DatabaseServerInformation  AS NVARCHAR(MAX);
@@ -8,21 +8,23 @@ DECLARE @Edition                    AS VARCHAR(50);
 DECLARE @IsClusteredInstance        AS VARCHAR(50); 
 DECLARE @IsInstanceinSingleUserMode AS VARCHAR(50);
 
+/** SERVER AND INSTANCE STATUS **/
+
  SELECT @Hostname = CONVERT(VARCHAR(50), @@SERVERNAME)
       , @Version  = CONVERT(VARCHAR(MAX), @@VERSION)
       , @Edition  = CONVERT(VARCHAR(50), SERVERPROPERTY('edition'))
 	  , @IsClusteredInstance = CASE SERVERPROPERTY('IsClustered') 
-								 WHEN 1 THEN 'Clustered Instance'
-								 WHEN 0 THEN 'Non Clustered instance'
-								 ELSE 'null'
-							   END
+									WHEN 1 THEN 'Clustered Instance'
+									WHEN 0 THEN 'Non Clustered instance'
+									ELSE 'null'
+							    END
 	  , @IsInstanceinSingleUserMode = CASE SERVERPROPERTY('IsSingleUser')
-										 WHEN 1 THEN 'Single user'
-										 WHEN 0 THEN 'Multi user'
-										 ELSE 'null'
+											WHEN 1 THEN 'Single user'
+											WHEN 0 THEN 'Multi user'
+											ELSE 'null'
 									   END;
 									   
-/*HTML Table with variables*/
+
     SET @DatabaseServerInformation = '<font face="Verdana" size="4">Server Info</font>  
 									  <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" bordercolor="#111111" width="90%" id="AutoNumber1" height="50">  
 									  <tr>  
@@ -41,5 +43,314 @@ DECLARE @IsInstanceinSingleUserMode AS VARCHAR(50);
 									  </tr>  
 									</table>';
 
-/** SERVER AND INSTANCE STATUS **/
 
+
+/** DISK STATUS **/
+-- NO MUESTRA EL DISCO C:/ :
+-- USAR -->
+/**
+CREATE TABLE #drives 
+(
+	drive CHAR(1) PRIMARY KEY
+  , FreeSpace INT NULL
+  , TotalSize INT NULL
+  , UsedSpace INT NULL
+  , Percent_Disk INT NULL
+);
+
+INSERT #drives (drive, FreeSpace)
+  EXEC master.dbo.xp_fixeddrives; 
+  
+**/
+
+
+
+ SELECT @DatabaseServerInformation = @DatabaseServerInformation + 
+                                     '<table id="AutoNumber1" style="BORDER-COLLAPSE: collapse" borderColor="#111111" height="40" cellSpacing="0" cellPadding="0" width="24%" border="1">
+									  <tr>
+										<td width="27%" bgColor="#D3D3D3" height="15"><b><font face="Verdana" size="1" color="#FFFFFF">Logical Name</font></b></td>
+										<td width="59%" bgColor="#D3D3D3" height="15"><b><font face="Verdana" size="1" color="#FFFFFF">Volume </font></b></td>
+										<td width="59%" bgColor="#D3D3D3" height="15"><b><font face="Verdana" size="1" color="#FFFFFF">Free Space (GB)</font></b></td>
+										<td width="59%" bgColor="#D3D3D3" height="15"><b><font face="Verdana" size="1" color="#FFFFFF">Occupied Space (GB)</font></b></td>
+										<td width="59%" bgColor="#D3D3D3" height="15"><b><font face="Verdana" size="1" color="#FFFFFF">Total Space (GB)</font></b></td>
+									  </tr>
+									  <p style="margin-top: 1; margin-bottom: 0">&nbsp;</p>
+									  <p><font face="Verdana" size="4">Disk Stats</font></p>'
+SELECT DISTINCT	@DatabaseServerInformation =  @DatabaseServerInformation +   
+											'<tr><td><font face="Verdana" size="1">' +  volumes.logical_volume_name +'</font></td>' +
+											'<td><font face="Verdana" size="1">' + volumes.volume_mount_point +'</font></td>' + 
+											'<td><font face="Verdana" size="1">' + Convert(varchar,CONVERT(INT,volumes.available_bytes/1024/1024/1024)) +'</font></td>' +
+											'<td><font face="Verdana" size="1">' + Convert(varchar,CONVERT(INT,volumes.total_bytes/1024/1024/1024) - CONVERT(INT,volumes.available_bytes/1024/1024/1024)) +'</font></td>' +
+											'<td><font face="Verdana" size="1">' + Convert(varchar,CONVERT(INT,volumes.total_bytes/1024/1024/1024)) +'</font></td></tr>' 
+	
+   FROM sys.master_files mf
+CROSS APPLY sys.dm_os_volume_stats(mf.database_id, mf.FILE_ID) volumes;
+
+SELECT 
+	@DatabaseServerInformation =  @DatabaseServerInformation + 
+	'<table id="AutoNumber1" style="BORDER-COLLAPSE: collapse" borderColor="#111111" height="40" cellSpacing="0" cellPadding="0" width="24%" border="1">
+	  <tr>
+		<td width="27%" bgColor="#D3D3D3" height="15"><b>
+		<font face="Verdana" size="1" color="#FFFFFF">Database Name</font></b></td>
+		<td width="59%" bgColor="#D3D3D3" height="15"><b>
+		<font face="Verdana" size="1" color="#FFFFFF">Created Date and Time </font></b></td>
+		<td width="59%" bgColor="#D3D3D3" height="15"><b>
+		<font face="Verdana" size="1" color="#FFFFFF">Database created by</font></b></td>
+		<td width="59%" bgColor="#D3D3D3" height="15"><b>
+		<font face="Verdana" size="1" color="#FFFFFF">Database Status</font></b></td>
+		<td width="59%" bgColor="#D3D3D3" height="15"><b>
+		<font face="Verdana" size="1" color="#FFFFFF">Database access status</font></b></td>
+		<td width="59%" bgColor="#D3D3D3" height="15"><b>
+		<font face="Verdana" size="1" color="#FFFFFF">Compatibility Level</font></b></td>
+		<td width="59%" bgColor="#D3D3D3" height="15"><b>
+		<font face="Verdana" size="1" color="#FFFFFF">Recovary Model</font></b></td>
+		<td width="59%" bgColor="#D3D3D3" height="15"><b>
+		<font face="Verdana" size="1" color="#FFFFFF">Database Size</font></b></td>
+	  </tr>
+	<p style="margin-top: 1; margin-bottom: 0">&nbsp;</p>
+	<p><font face="Verdana" size="4">Databases Status</font></p>';
+
+      SELECT @DatabaseServerInformation =  @DatabaseServerInformation +   
+										   '<tr><td><font face="Verdana" size="1">' + convert(varchar,a.name) +'</font></td>' +
+										   '<td><font face="Verdana" size="1">' + convert(nvarchar,a.create_date) +'</font></td>' + 
+										   '<td><font face="Verdana" size="1">' + b.name +'</font></td>' +
+										   '<td><font face="Verdana" size="1">' + a.state_desc +'</font></td>' +
+										   '<td><font face="Verdana" size="1">' + a.user_access_desc +'</font></td>' +
+										   '<td><font face="Verdana" size="1">' + convert(nvarchar,a.compatibility_level) +'</font></td>' +
+										   '<td><font face="Verdana" size="1">' + a.recovery_model_desc +'</font></td>' +
+										   '<td><font face="Verdana" size="1">' + convert(nvarchar,Sum((c.size*8)/1024)) +'</font></td></tr>'
+        FROM sys.databases a 
+  inner join sys.server_principals b 
+          on a.owner_sid = b.sid 
+  inner join sys.master_files c
+          on a.database_id = c.database_id
+       Where a.database_id > 5
+    Group by a.name
+	       , a.create_date
+		   , b.name
+		   , a.user_access_desc
+		   , compatibility_level
+		   , recovery_model_desc
+		   , a.database_id
+		   , a.state_desc;
+
+/**DATABASE BACKUP INFORMATION**/
+
+IF OBJECT_ID(N'tempdb..#BackupInformation') IS NOT NULL
+BEGIN
+DROP TABLE #BackupInformation
+END
+
+
+create table #BackupInformation 
+(
+	  DatabaseName     varchar(200)
+	, backup_type      varchar(50)
+	, backupstartdate  datetime
+	, backupfinishdate datetime
+	, username         varchar(200)
+	, server_name      varchar(200)
+	, backupsize       numeric(10,2)
+	, BackupUser       varchar(250)
+)
+
+;with backup_information as
+(
+    select database_name
+	     , backup_type = case type
+                            when 'D' then 'Full backup'
+                            when 'I' then 'Differential backup'
+                            when 'L' then 'Log backup'
+                            else 'Other or copy only backup'
+                          end 
+	      , backup_start_date 
+		  , backup_finish_date 
+		  , user_name  
+		  , server_name 
+		  , compressed_backup_size 
+		  , rownum = row_number() over ( partition by database_name, type order by backup_finish_date desc )
+       from msdb.dbo.backupset
+)
+insert into #BackupInformation(DatabaseName, backup_type, backupstartdate, backupfinishdate, username, server_name, backupsize, BackupUser)
+	 select database_name      -- [Database Name]             
+	      , backup_type        -- [Backup Type]                 
+		  ,	backup_start_date  -- [Backup start date]     
+		  , backup_finish_date -- [Backup finish date]   
+		  , user_name          -- [User Name]                     
+		  ,	server_name        -- [Server Name]                 
+		  ,	Convert(varchar,convert(numeric(10,2), compressed_backup_size/ 1024/1024)) -- [Backup size in MB]
+		  , user_name         -- [Backup taken by] 
+	   from backup_information
+	  where rownum = 1
+   order by database_name;
+
+SELECT @DatabaseServerInformation = @DatabaseServerInformation + 
+									'<table id="AutoNumber1" style="BORDER-COLLAPSE: collapse" borderColor="#111111" height="40" cellSpacing="0" cellPadding="0" width="54%" border="1">
+									  <tr>
+										<td width="27%" bgColor="#D3D3D3" height="15"><b>
+										<font face="Verdana" size="1" color="#FFFFFF">Database Name</font></b></td>
+										<td width="19%" bgColor="#D3D3D3" height="15"><b>
+										<font face="Verdana" size="1" color="#FFFFFF">Backup Type </font></b></td>
+										<td width="29%" bgColor="#D3D3D3" height="15"><b>
+										<font face="Verdana" size="1" color="#FFFFFF">Backup Start Date</font></b></td>
+										<td width="29%" bgColor="#D3D3D3" height="15"><b>
+										<font face="Verdana" size="1" color="#FFFFFF">Backup Finsh Date</font></b></td>
+										<td width="29%" bgColor="#D3D3D3" height="15"><b>
+										<font face="Verdana" size="1" color="#FFFFFF">Server Name</font></b></td>
+										<td width="29%" bgColor="#D3D3D3" height="15"><b>
+										<font face="Verdana" size="1" color="#FFFFFF">Backup Size in MB</font></b></td>
+										<td width="29%" bgColor="#D3D3D3" height="15"><b>
+										<font face="Verdana" size="1" color="#FFFFFF">Backup generated by </font></b></td>
+									  </tr>
+									<p style="margin-top: 1; margin-bottom: 0">&nbsp;</p>
+									<p><font face="Verdana" size="4">Backup Details</font></p>';
+
+	SELECT @DatabaseServerInformation =  @DatabaseServerInformation +   
+										'<tr><td><font face="Verdana" size="1">' +  convert(varchar,databasename) +'</font></td>' +
+										'<td><font face="Verdana" size="1">' + convert(nvarchar,backup_type) +'</font></td>' + 
+										'<td><font face="Verdana" size="1">' + convert(varchar,backupstartdate,120) +'</font></td>' +
+										'<td><font face="Verdana" size="1">' + convert(varchar,backupfinishdate,120) +'</font></td>' +
+										'<td><font face="Verdana" size="1">' + server_name  +'</font></td>' +
+										'<td><font face="Verdana" size="1">' + Convert(varchar,convert(numeric(10,2),backupsize)) +'</font></td>' +
+										'<td><font face="Verdana" size="1">' + BackupUser +'</font></td></tr>'
+	  from #BackupInformation;
+
+
+/** STATUS OF THE SQL JOBS **/
+
+IF OBJECT_ID(N'tempdb..#JobInformation') IS NOT NULL
+	BEGIN
+		DROP TABLE #JobInformation
+	END
+
+create table #JobInformation 
+(
+  Servername varchar(100)
+, categoryname varchar(100)
+, JobName varchar(500)
+, ownerID varchar(250)
+, Enabled varchar(5)
+, NextRunDate datetime
+, LastRunDate datetime
+, status varchar(50)
+);
+
+Insert into #JobInformation (Servername,categoryname,JobName,ownerID,Enabled,NextRunDate,LastRunDate,status)
+SELECT 
+    convert (varchar, SERVERPROPERTY('Servername')) AS ServerName
+,categories.NAME AS CategoryName
+    ,sqljobs.name
+    ,SUSER_SNAME(sqljobs.owner_sid) AS OwnerID
+    ,CASE sqljobs.enabled WHEN 1 THEN 'Yes' ELSE 'No'END AS Enabled
+    ,CASE job_schedule.next_run_date
+    WHEN 0
+    THEN CONVERT(DATETIME, '1900/1/1')
+    ELSE CONVERT(DATETIME, CONVERT(CHAR(8), job_schedule.next_run_date, 112) 
+    + ' ' + STUFF(STUFF(RIGHT('000000' + CONVERT(VARCHAR(8), job_schedule.next_run_time), 6), 5, 0, ':'), 3, 0, ':'))
+    END NextScheduledRunDate
+,lastrunjobhistory.LastRunDate
+,ISNULL(lastrunjobhistory.run_status_desc,'Unknown') AS run_status_desc
+    
+FROM msdb.dbo.sysjobs AS sqljobs
+LEFT JOIN msdb.dbo.sysjobschedules AS job_schedule
+    ON sqljobs.job_id = job_schedule.job_id
+LEFT JOIN msdb.dbo.sysschedules AS schedule
+    ON job_schedule.schedule_id = schedule.schedule_id
+INNER JOIN msdb.dbo.syscategories categories
+    ON sqljobs.category_id = categories.category_id
+LEFT OUTER JOIN (
+    SELECT Jobhistory.job_id
+    FROM msdb.dbo.sysjobhistory AS Jobhistory
+    WHERE Jobhistory.step_id = 0
+    GROUP BY Jobhistory.job_id
+    ) AS jobhistory
+    ON jobhistory.job_id = sqljobs.job_id  -- to get the average duration
+LEFT OUTER JOIN
+(
+SELECT sysjobhist.job_id
+    ,CASE sysjobhist.run_date
+    WHEN 0
+    THEN CONVERT(DATETIME, '1900/1/1')
+    ELSE CONVERT(DATETIME, CONVERT(CHAR(8), sysjobhist.run_date, 112) 
+    + ' ' + STUFF(STUFF(RIGHT('000000' + CONVERT(VARCHAR(8), sysjobhist.run_time), 6), 5, 0, ':'), 3, 0, ':'))
+    END AS LastRunDate
+    ,sysjobhist.run_status
+    ,CASE sysjobhist.run_status
+    WHEN 0
+    THEN 'Failed'
+    WHEN 1
+    THEN 'Succeeded'
+    WHEN 2
+    THEN 'Retry'
+    WHEN 3
+    THEN 'Canceled'
+    WHEN 4
+    THEN 'In Progress'
+    ELSE 'Unknown'
+    END AS run_status_desc
+    ,sysjobhist.retries_attempted
+    ,sysjobhist.step_id
+    ,sysjobhist.step_name
+    ,sysjobhist.run_duration AS RunTimeInSeconds
+    ,sysjobhist.message
+    ,ROW_NUMBER() OVER (
+    PARTITION BY sysjobhist.job_id ORDER BY CASE sysjobhist.run_date
+    WHEN 0
+        THEN CONVERT(DATETIME, '1900/1/1')
+    ELSE CONVERT(DATETIME, CONVERT(CHAR(8), sysjobhist.run_date, 112) 
+    + ' ' + STUFF(STUFF(RIGHT('000000' + CONVERT(VARCHAR(8), sysjobhist.run_time), 6), 5, 0, ':'), 3, 0, ':'))
+    END DESC
+    ) AS RowOrder
+FROM msdb.dbo.sysjobhistory AS sysjobhist
+WHERE sysjobhist.step_id = 0  --to get just the job outcome and not all steps
+)AS lastrunjobhistory
+    ON lastrunjobhistory.job_id = sqljobs.job_id  -- to get the last run details
+    AND
+    lastrunjobhistory.RowOrder=1;
+
+SELECT 
+@DatabaseServerInformation =  @DatabaseServerInformation + 
+'<table id="AutoNumber1" style="BORDER-COLLAPSE: collapse" borderColor="#111111" height="40" cellSpacing="0" cellPadding="0" width="54%" border="1">
+    <tr>
+    <td width="17%" bgColor="#D3D3D3" height="15"><b>
+    <font face="Verdana" size="1" color="#FFFFFF">Server Name</font></b></td>
+    <td width="19%" bgColor="#D3D3D3" height="15"><b>
+    <font face="Verdana" size="1" color="#FFFFFF">Job Category </font></b></td>
+    <td width="29%" bgColor="#D3D3D3" height="15"><b>
+    <font face="Verdana" size="1" color="#FFFFFF">Job Name</font></b></td>
+    <td width="15%" bgColor="#D3D3D3" height="15"><b>
+    <font face="Verdana" size="1" color="#FFFFFF">Job owner</font></b></td>
+    <td width="5%" bgColor="#D3D3D3" height="15"><b>
+    <font face="Verdana" size="1" color="#FFFFFF">Enabled</font></b></td>
+    <td width="29%" bgColor="#D3D3D3" height="15"><b>
+    <font face="Verdana" size="1" color="#FFFFFF">Next Run Date</font></b></td>
+    <td width="29%" bgColor="#D3D3D3" height="15"><b>
+    <font face="Verdana" size="1" color="#FFFFFF">Last Run Date</font></b></td>
+    <td width="29%" bgColor="#D3D3D3" height="15"><b>
+    <font face="Verdana" size="1" color="#FFFFFF">Status</font></b></td>
+    </tr>
+<p style="margin-top: 1; margin-bottom: 0">&nbsp;</p>
+<p><font face="Verdana" size="4">Backup Details</font></p>'
+SELECT 
+@DatabaseServerInformation =  @DatabaseServerInformation +   
+'<tr><td><font face="Verdana" size="1">' + ISNULL(convert(varchar,Servername),'-') +'</font></td>' +
+'<td><font face="Verdana" size="1">' + ISNULL(convert(nvarchar,categoryname),'-') +'</font></td>' + 
+'<td><font face="Verdana" size="1">' + ISNULL(convert(varchar,JobName),'-') +'</font></td>' +
+'<td><font face="Verdana" size="1">' + ISNULL(convert(varchar,ownerID),'-') +'</font></td>' +
+'<td><font face="Verdana" size="1">' + ISNULL(Enabled,'') +'</font></td>' +
+'<td><font face="Verdana" size="1">' + ISNULL(Convert(varchar,NextRunDate,120),'-') +'</font></td>' +
+'<td><font face="Verdana" size="1">' + ISNULL(Convert(varchar,LastRunDate,120),'-') +'</font></td>' +
+'<td><font face="Verdana" size="1">' + ISNULL(status,'-') +'</font></td></tr>'
+from 
+#JobInformation
+
+
+ SELECT @DatabaseServerInformation;
+
+EXEC msdb.dbo.sp_send_dbmail @profile_name = 'DEV_DBASQL'
+									   , @from_address = 'pugah@bancoaliado.com'
+									   , @importance   = 'High'
+									   , @recipients   = 'pugah@bancoaliado.com'
+									   , @subject      = 'Health Reports'
+									   , @body_format  = 'HTML'
+									   , @body         = @DatabaseServerInformation;
